@@ -57,6 +57,8 @@ export const createRoom = async (req, res) => {
     memberIds: [],
     coOwnerIds: [],
     inviteCode: [],
+    presentation: [],
+    recordings: [],
   });
 
   //Add group to user
@@ -71,7 +73,43 @@ export const createRoom = async (req, res) => {
   }
 
   //ALl SUCCESS
-  return res.status(SUCCESS_STATUS_CODE).json(APIResponse(STATUS.OK, newGroup));
+  return res
+    .status(SUCCESS_STATUS_CODE)
+    .json(APIResponse(STATUS.OK, "Create room successfully", newGroup));
+};
+
+export const updateRoom = async (req, res) => {
+  const { token, id } = req.body;
+
+  //Get Owner
+  const owner = jwt.decode(token);
+  let ownerUser;
+
+  try {
+    ownerUser = await userModel.findOne({ email: owner.user.email });
+  } catch (error) {
+    return res
+      .status(INTERNAL_SERVER_STATUS_CODE)
+      .json(APIResponse(STATUS.ERROR, error.message));
+  }
+
+  let updatedGroup;
+
+  try {
+    await groupModel.updateOne({ _id: id }, req.body);
+    updatedGroup = await groupModel.findOne({ _id: id });
+  } catch (error) {
+    return res
+      .status(INTERNAL_SERVER_STATUS_CODE)
+      .json(
+        APIResponse(STATUS.ERROR, INTERNAL_SERVER_STATUS_MESSAGE, error.message)
+      );
+  }
+
+  //ALL SUCCESS
+  return res
+    .status(SUCCESS_STATUS_CODE)
+    .json(APIResponse(STATUS.OK, "Update group successfully", updatedGroup));
 };
 
 export const createInviteLink = async (req, res) => {
@@ -524,7 +562,9 @@ export const delRoomByIds = async (req, res) => {
     await groupModel.deleteOne({ _id: id });
     let index = ownerUser.myGroupIds.indexOf(id);
     if (index > -1) {
-      ownerUser.myGroupIds.splice(index, 1);
+      if (ownerUser.myGroupIds.length === 1) {
+        ownerUser.myGroupIds = [];
+      } else ownerUser.myGroupIds.splice(index, 1);
     }
     await ownerUser.save();
 

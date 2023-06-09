@@ -19,7 +19,6 @@
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.13.7",
     "nodemon": "^2.0.12",
-    "socket.io": "^4.5.4",
     "uuid": "^9.0.0"
   },
   "engines": {
