@@ -21,8 +21,7 @@ const Group = new mongoose.Schema({
   ],
   inviteCode: [{ type: String, required: true }],
   meetingInfo: { type: String },
-  presentation: [{ type: String }],
-  recordings: [{ type: String }],
+  presentation: { type: String },
 });
 
 export default mongoose.model("Group", Group);

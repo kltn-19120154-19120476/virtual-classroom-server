@@ -57,8 +57,6 @@ export const createRoom = async (req, res) => {
     memberIds: [],
     coOwnerIds: [],
     inviteCode: [],
-    presentation: [],
-    recordings: [],
   });
 
   //Add group to user
