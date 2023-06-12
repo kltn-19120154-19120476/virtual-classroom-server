@@ -1,14 +1,12 @@
 import express from "express";
 import authenticationMiddleware from "../../middleware/auth.middleware.js";
 import {
-  createInviteLink,
+  addUser,
   createRoom,
   delRoomByIds,
   getRoomByIds,
   getRoomDetail,
-  inviteByLink,
-  removeMember,
-  sendEmailInvite,
+  removeUser,
   updateRoom,
   upgradeRole,
 } from "./room.controller.js";
@@ -17,13 +15,11 @@ const router = express.Router();
 
 router.post("/create", authenticationMiddleware, createRoom);
 router.put("/update", authenticationMiddleware, updateRoom);
-router.post("/link", authenticationMiddleware, createInviteLink);
-router.post("/invite", inviteByLink);
-router.post("/send-invite-email", sendEmailInvite);
+router.post("/add-user", addUser);
 router.post("/role", authenticationMiddleware, upgradeRole);
-router.post("/remove", authenticationMiddleware, removeMember);
+router.post("/remove-user", authenticationMiddleware, removeUser);
 
-router.get("/detail/:groupId", authenticationMiddleware, getRoomDetail);
+router.get("/detail/:roomId", authenticationMiddleware, getRoomDetail);
 router.post("/list", authenticationMiddleware, getRoomByIds);
 router.delete("/list/:id", authenticationMiddleware, delRoomByIds);
 

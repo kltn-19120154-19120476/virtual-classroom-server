@@ -1,6 +1,4 @@
 import jwt from "jsonwebtoken";
-import { v4 as uuidv4 } from "uuid";
-import { sendEmail } from "../../config/email/emailService.js";
 import { STATUS } from "../../constants/common.js";
 import {
   BAD_REQUEST_STATUS_CODE,
@@ -24,20 +22,6 @@ dotenv.config();
 
 export const createRoom = async (req, res) => {
   const { name, token } = req.body;
-
-  //Check name exists
-  try {
-    const existGroup = await groupModel.findOne({ name });
-    if (existGroup) {
-      return res
-        .status(BAD_REQUEST_STATUS_CODE)
-        .json(APIResponse(STATUS.ERROR, "Your group name is already existed"));
-    }
-  } catch (error) {
-    return res
-      .status(INTERNAL_SERVER_STATUS_CODE)
-      .json(APIResponse(STATUS.ERROR, error.message));
-  }
 
   //Get Owner
   const owner = jwt.decode(token);
@@ -110,77 +94,33 @@ export const updateRoom = async (req, res) => {
     .json(APIResponse(STATUS.OK, "Update group successfully", updatedGroup));
 };
 
-export const createInviteLink = async (req, res) => {
-  const { groupId, token } = req.body;
-
-  let groupInstance;
-
-  try {
-    groupInstance = await groupModel.findById(groupId);
-  } catch (error) {
-    return res
-      .status(INTERNAL_SERVER_STATUS_CODE)
-      .json(APIResponse(STATUS.ERROR, error.message));
-  }
-
-  // Get owner information
-  const owner = jwt.decode(token);
-  let ownerUser;
-
-  try {
-    ownerUser = await userModel.findOne({ email: owner.user.email });
-  } catch (error) {
-    return res
-      .status(INTERNAL_SERVER_STATUS_CODE)
-      .json(APIResponse(STATUS.ERROR, error.message));
-  }
-
-  // Check if requester is group's owner
-  if (!groupInstance?.ownerId.equals(ownerUser?._id)) {
-    return res
-      .status(FORBIDDEN_STATUS_CODE)
-      .json(APIResponse(STATUS.ERROR, "You are not allowed to do this", []));
-  }
-
-  const code = uuidv4();
-  groupInstance.inviteCode.push(code);
-
-  try {
-    await groupInstance.save();
-  } catch (error) {
-    return res
-      .status(INTERNAL_SERVER_STATUS_CODE)
-      .json(APIResponse(STATUS.ERROR, error.message));
-  }
-
-  //ALl SUCCESS
-  return res.status(SUCCESS_STATUS_CODE).json(
-    APIResponse(STATUS.OK, SUCCESS_STATUS_MESSAGE, {
-      groupId: groupInstance._id,
-      code,
-    })
-  );
-};
-
-export const inviteByLink = async (req, res) => {
-  const { code, groupId, userId } = req.body;
+export const addUser = async (req, res) => {
+  const { roomId, userEmail } = req.body;
 
   //Get Member
   let memberUser;
 
   try {
-    memberUser = await userModel.findById(userId);
+    memberUser = await userModel.findOne({ email: userEmail });
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
       .json(APIResponse(STATUS.ERROR, error.message));
   }
 
+  if (!memberUser?._id) {
+    return res
+      .status(NOTFOUND_STATUS_CODE)
+      .json(APIResponse(STATUS.ERROR, "User does not exist"));
+  }
+
+  const userId = memberUser._id;
+
   //Get GroupInstance
   let groupInstance;
 
   try {
-    groupInstance = await groupModel.findById(groupId);
+    groupInstance = await groupModel.findById(roomId);
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
@@ -199,22 +139,9 @@ export const inviteByLink = async (req, res) => {
         APIResponse(
           STATUS.ERROR,
           BAD_REQUEST_STATUS_MESSAGE,
-          "You are already in this group !!!"
+          "User is already in this group!"
         )
       );
-  }
-
-  //Check code
-  if (!groupInstance.inviteCode.includes(code)) {
-    return res
-      .status(FORBIDDEN_STATUS_CODE)
-      .json(APIResponse(STATUS.ERROR, "You are not invited", []));
-  }
-
-  //Remove inviteCode and add to member
-  var index = groupInstance.inviteCode.indexOf(code);
-  if (index > -1) {
-    groupInstance.inviteCode.splice(index, 1);
   }
 
   groupInstance.memberIds.push(memberUser);
@@ -231,40 +158,11 @@ export const inviteByLink = async (req, res) => {
 
   return res
     .status(SUCCESS_STATUS_CODE)
-    .json(APIResponse(STATUS.OK, "Add successfully"));
-};
-
-export const sendEmailInvite = async (req, res) => {
-  const { link, email, ownerName } = req.body;
-
-  try {
-    sendEmail(
-      process.env.EMAIL_HOST,
-      email,
-      "Invited to a group",
-      `<p> ${
-        ownerName ? ownerName : "Someone"
-      } has invited you to a group, click to join: <a href="${link}"> ${link} </a></p>`
-    );
-  } catch (error) {
-    return res
-      .status(INTERNAL_SERVER_STATUS_CODE)
-      .json(APIResponse(STATUS.ERROR, error.message));
-  }
-
-  return res
-    .status(SUCCESS_STATUS_CODE)
-    .json(
-      APIResponse(
-        STATUS.OK,
-        SUCCESS_STATUS_MESSAGE,
-        "Send invited link successully !!!"
-      )
-    );
+    .json(APIResponse(STATUS.OK, "Add user to room successfully"));
 };
 
 export const upgradeRole = async (req, res) => {
-  const { memberId, roleCode, groupId, token, isUpgrade } = req.body;
+  const { memberId, roleCode, roomId, token, isUpgrade } = req.body;
 
   // Get owner information
   const owner = jwt.decode(token);
@@ -293,7 +191,7 @@ export const upgradeRole = async (req, res) => {
   let groupInstance;
 
   try {
-    groupInstance = await groupModel.findById(groupId);
+    groupInstance = await groupModel.findById(roomId);
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
@@ -362,25 +260,33 @@ export const upgradeRole = async (req, res) => {
   }
 };
 
-export const removeMember = async (req, res) => {
-  const { groupId, userId } = req.body;
+export const removeUser = async (req, res) => {
+  const { roomId, userEmail } = req.body;
 
   // //Get Member
   let memberUser;
 
   try {
-    memberUser = await userModel.findById(userId);
+    memberUser = await userModel.findOne({ email: userEmail });
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
       .json(APIResponse(STATUS.ERROR, error.message));
   }
 
+  if (!memberUser?._id) {
+    return res
+      .status(NOTFOUND_STATUS_CODE)
+      .json(APIResponse(STATUS.ERROR, "User does not exist"));
+  }
+
+  const userId = memberUser._id;
+
   //Get GroupInstance
   let groupInstance;
 
   try {
-    groupInstance = await groupModel.findById(groupId);
+    groupInstance = await groupModel.findById(roomId);
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
@@ -419,7 +325,7 @@ export const removeMember = async (req, res) => {
       }
     }
 
-    let index = memberUser.joinedGroupIds.indexOf(groupId);
+    let index = memberUser.joinedGroupIds.indexOf(roomId);
     if (index > -1) {
       memberUser.joinedGroupIds.splice(index, 1);
     }
@@ -434,7 +340,7 @@ export const removeMember = async (req, res) => {
 
   return res
     .status(SUCCESS_STATUS_CODE)
-    .json(APIResponse(STATUS.OK, "Remove member successfully"));
+    .json(APIResponse(STATUS.OK, "Remove user successfully"));
 };
 
 // Get Data
@@ -442,9 +348,9 @@ export const removeMember = async (req, res) => {
 export const getRoomDetail = async (req, res) => {
   try {
     const { token } = req.body;
-    const groupId = req.param("groupId");
+    const roomId = req.param("roomId");
     //Get GroupInstance
-    let groupInstance = await groupModel.findById(groupId);
+    let groupInstance = await groupModel.findById(roomId);
 
     //Get member
     const member = jwt.decode(token);
