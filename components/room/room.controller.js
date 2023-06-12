@@ -2,13 +2,9 @@ import jwt from "jsonwebtoken";
 import { STATUS } from "../../constants/common.js";
 import {
   BAD_REQUEST_STATUS_CODE,
-  BAD_REQUEST_STATUS_MESSAGE,
   FORBIDDEN_STATUS_CODE,
-  FORBIDDEN_STATUS_MESSAGE,
   INTERNAL_SERVER_STATUS_CODE,
-  INTERNAL_SERVER_STATUS_MESSAGE,
   NOTFOUND_STATUS_CODE,
-  NOTFOUND_STATUS_MESSAGE,
   SUCCESS_STATUS_CODE,
   SUCCESS_STATUS_MESSAGE,
 } from "../../constants/http-response.js";
@@ -83,9 +79,7 @@ export const updateRoom = async (req, res) => {
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
-      .json(
-        APIResponse(STATUS.ERROR, INTERNAL_SERVER_STATUS_MESSAGE, error.message)
-      );
+      .json(APIResponse(STATUS.ERROR, error.message));
   }
 
   //ALL SUCCESS
@@ -135,13 +129,7 @@ export const addUser = async (req, res) => {
   ) {
     return res
       .status(BAD_REQUEST_STATUS_CODE)
-      .json(
-        APIResponse(
-          STATUS.ERROR,
-          BAD_REQUEST_STATUS_MESSAGE,
-          "User is already in this group!"
-        )
-      );
+      .json(APIResponse(STATUS.ERROR, "User is already in this group!"));
   }
 
   groupInstance.memberIds.push(memberUser);
@@ -224,13 +212,7 @@ export const upgradeRole = async (req, res) => {
 
     return res
       .status(SUCCESS_STATUS_CODE)
-      .json(
-        APIResponse(
-          STATUS.OK,
-          SUCCESS_STATUS_MESSAGE,
-          "Upgrade role successfully"
-        )
-      );
+      .json(APIResponse(STATUS.OK, "Upgrade role successfully"));
   } else {
     //Move from co-owner to member
     var index = groupInstance.coOwnerIds.indexOf(memberUser._id);
@@ -250,13 +232,7 @@ export const upgradeRole = async (req, res) => {
 
     return res
       .status(SUCCESS_STATUS_CODE)
-      .json(
-        APIResponse(
-          STATUS.OK,
-          SUCCESS_STATUS_MESSAGE,
-          "Downgrade role successfully"
-        )
-      );
+      .json(APIResponse(STATUS.OK, "Downgrade role successfully"));
   }
 };
 
@@ -437,29 +413,19 @@ export const delRoomByIds = async (req, res) => {
     if (!existGroup) {
       return res
         .status(NOTFOUND_STATUS_CODE)
-        .json(
-          APIResponse(STATUS.ERROR, NOTFOUND_STATUS_MESSAGE, "Group not found")
-        );
+        .json(APIResponse(STATUS.ERROR, "Group not found"));
     }
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
-      .json(
-        APIResponse(STATUS.ERROR, INTERNAL_SERVER_STATUS_MESSAGE, error.message)
-      );
+      .json(APIResponse(STATUS.ERROR, error.message));
   }
 
   //Check owner of group
   if (!existGroup.ownerId.equals(req.user._id)) {
     return res
       .status(FORBIDDEN_STATUS_CODE)
-      .json(
-        APIResponse(
-          STATUS.ERROR,
-          FORBIDDEN_STATUS_MESSAGE,
-          "You are not allowed"
-        )
-      );
+      .json(APIResponse(STATUS.ERROR, "You are not allowed"));
   }
 
   try {
@@ -479,15 +445,11 @@ export const delRoomByIds = async (req, res) => {
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
-      .json(
-        APIResponse(STATUS.ERROR, INTERNAL_SERVER_STATUS_MESSAGE, error.message)
-      );
+      .json(APIResponse(STATUS.ERROR, error.message));
   }
 
   //ALL SUCCESS
   return res
     .status(SUCCESS_STATUS_CODE)
-    .json(
-      APIResponse(STATUS.OK, SUCCESS_STATUS_MESSAGE, "Remove successfully")
-    );
+    .json(APIResponse(STATUS.OK, "Remove room successfully"));
 };
