@@ -19,9 +19,9 @@ const Group = new mongoose.Schema({
       ref: "User",
     },
   ],
-  inviteCode: [{ type: String, required: true }],
   meetingInfo: { type: String },
   presentation: { type: String },
+  meetingSettings: { type: String },
 });
 
 export default mongoose.model("Group", Group);

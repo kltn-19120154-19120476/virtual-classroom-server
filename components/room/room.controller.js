@@ -36,7 +36,6 @@ export const createRoom = async (req, res) => {
     ownerId: ownerUser._id,
     memberIds: [],
     coOwnerIds: [],
-    inviteCode: [],
   });
 
   //Add group to user
@@ -323,25 +322,26 @@ export const removeUser = async (req, res) => {
 
 export const getRoomDetail = async (req, res) => {
   try {
-    const { token } = req.body;
     const roomId = req.param("roomId");
     //Get GroupInstance
     let groupInstance = await groupModel.findById(roomId);
 
     //Get member
-    const member = jwt.decode(token);
-    let memberUser;
-
-    memberUser = await userModel.findOne({ email: member.user.email });
+    let memberUser = req.user;
 
     if (
       groupInstance.ownerId.equals(memberUser._id) ||
       groupInstance.memberIds.includes(memberUser._id) ||
       groupInstance.coOwnerIds.includes(memberUser._id)
     ) {
+      const result = {
+        ...groupInstance._doc,
+        isOwner: groupInstance.ownerId.equals(memberUser._id),
+      };
+
       return res
         .status(SUCCESS_STATUS_CODE)
-        .json(APIResponse(STATUS.OK, SUCCESS_STATUS_MESSAGE, groupInstance));
+        .json(APIResponse(STATUS.OK, SUCCESS_STATUS_MESSAGE, result));
     } else {
       return res
         .status(FORBIDDEN_STATUS_CODE)
@@ -372,7 +372,12 @@ export const getRoomByIds = async (req, res) => {
 
       return res.status(SUCCESS_STATUS_CODE).json({
         status: STATUS.OK,
-        data: groupList,
+        data: groupList.map((group) => {
+          return {
+            ...group._doc,
+            isOwner: group.ownerId.equals(req.user._id),
+          };
+        }),
         message: "Get group list successfully",
       });
     } else {
