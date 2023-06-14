@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const Group = new mongoose.Schema({
+const Room = new mongoose.Schema({
   name: { type: String, required: true },
   ownerId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -24,4 +24,4 @@ const Group = new mongoose.Schema({
   meetingSettings: { type: String },
 });
 
-export default mongoose.model("Group", Group);
+export default mongoose.model("Room", Room);

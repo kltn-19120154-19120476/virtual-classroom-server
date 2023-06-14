@@ -6,7 +6,14 @@ import { APIResponse } from "../../models/APIResponse.js";
 import User from "../../models/user.model.js";
 
 import { DEFAULT_PASSWORD, STATUS } from "../../constants/common.js";
-import { BAD_REQUEST_STATUS_CODE, INTERNAL_SERVER_STATUS_CODE, NOTFOUND_STATUS_CODE, SUCCESS_STATUS_CODE, SUCCESS_STATUS_MESSAGE, UNAUTHENTICATED_STATUS_CODE } from "../../constants/http-response.js";
+import {
+  BAD_REQUEST_STATUS_CODE,
+  INTERNAL_SERVER_STATUS_CODE,
+  NOTFOUND_STATUS_CODE,
+  SUCCESS_STATUS_CODE,
+  SUCCESS_STATUS_MESSAGE,
+  UNAUTHENTICATED_STATUS_CODE,
+} from "../../constants/http-response.js";
 
 import { sendEmail } from "../../config/email/emailService.js";
 
@@ -35,18 +42,19 @@ export const register = async (req, res) => {
       email,
     });
 
-    if (user) return res.status(BAD_REQUEST_STATUS_CODE).json({ status: STATUS.ERROR, message: "Email is used!", data: [] });
+    if (user)
+      return res
+        .status(BAD_REQUEST_STATUS_CODE)
+        .json({ status: STATUS.ERROR, message: "Email is used!", data: [] });
 
     const newPassword = await bcrypt.hash(password, 10);
 
     const newUser = {
       name,
       email,
-      myGroupIds: [],
-      joinedGroupIds: [],
-      presentationIds: [],
+      myRoomIds: [],
+      joinedRoomIds: [],
       isActive: true,
-      activeCode: uuidv4(),
     };
 
     const registerUser = await User.create({
@@ -56,7 +64,11 @@ export const register = async (req, res) => {
 
     const access_token = jwt.sign({ user: newUser }, process.env.SECRET_TOKEN);
 
-    return res.status(SUCCESS_STATUS_CODE).json({ code: STATUS.OK, message: SUCCESS_STATUS_MESSAGE, data: [{ ...registerUser._doc, access_token }] });
+    return res.status(SUCCESS_STATUS_CODE).json({
+      code: STATUS.OK,
+      message: SUCCESS_STATUS_MESSAGE,
+      data: [{ ...registerUser._doc, access_token }],
+    });
   } catch (err) {
     return res.status(NOTFOUND_STATUS_CODE).json({
       status: STATUS.ERROR,
@@ -78,14 +90,17 @@ export const login = async (req, res) => {
       return res.status(UNAUTHENTICATED_STATUS_CODE).json({
         status: STATUS.ERROR,
         data: [],
-        message: "Unauthorized",
+        message: "Wrong email or password",
       });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (isPasswordValid) {
-      const access_token = jwt.sign({ user: user._doc }, process.env.SECRET_TOKEN);
+      const access_token = jwt.sign(
+        { user: user._doc },
+        process.env.SECRET_TOKEN
+      );
 
       return res.status(SUCCESS_STATUS_CODE).json({
         status: STATUS.OK,
@@ -105,7 +120,9 @@ export const login = async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(INTERNAL_SERVER_STATUS_CODE).json({ status: STATUS.ERROR, data: [], message: error.message });
+    res
+      .status(INTERNAL_SERVER_STATUS_CODE)
+      .json({ status: STATUS.ERROR, data: [], message: error.message });
   }
 };
 
@@ -125,8 +142,8 @@ export const loginWithGoogle = async (req, res) => {
       const newUser = {
         name,
         email,
-        myGroupIds: [],
-        joinedGroupIds: [],
+        myRoomIds: [],
+        joinedRoomIds: [],
         presentationIds: [],
         isActive: true,
         activeCode: uuidv4(),
@@ -134,10 +151,20 @@ export const loginWithGoogle = async (req, res) => {
       };
 
       const registerUser = await User.create(newUser);
-      const access_token = jwt.sign({ user: registerUser._doc }, process.env.SECRET_TOKEN);
-      return res.status(SUCCESS_STATUS_CODE).json({ status: STATUS.OK, message: SUCCESS_STATUS_MESSAGE, data: [{ ...registerUser?._doc, access_token }] });
+      const access_token = jwt.sign(
+        { user: registerUser._doc },
+        process.env.SECRET_TOKEN
+      );
+      return res.status(SUCCESS_STATUS_CODE).json({
+        status: STATUS.OK,
+        message: SUCCESS_STATUS_MESSAGE,
+        data: [{ ...registerUser?._doc, access_token }],
+      });
     } else {
-      const access_token = jwt.sign({ user: user._doc }, process.env.SECRET_TOKEN);
+      const access_token = jwt.sign(
+        { user: user._doc },
+        process.env.SECRET_TOKEN
+      );
       return res.status(SUCCESS_STATUS_CODE).json({
         status: STATUS.OK,
         message: SUCCESS_STATUS_MESSAGE,
@@ -150,7 +177,9 @@ export const loginWithGoogle = async (req, res) => {
       });
     }
   } catch (err) {
-    return res.status(BAD_REQUEST_STATUS_CODE).json({ message: err.message, data: [], status: STATUS.ERROR });
+    return res
+      .status(BAD_REQUEST_STATUS_CODE)
+      .json({ message: err.message, data: [], status: STATUS.ERROR });
   }
 };
 
@@ -161,25 +190,40 @@ export const verifyAccount = async (req, res) => {
   try {
     user = await User.findById(userId);
   } catch (error) {
-    return res.status(INTERNAL_SERVER_STATUS_CODE).json(APIResponse(STATUS.ERROR, error.message));
+    return res
+      .status(INTERNAL_SERVER_STATUS_CODE)
+      .json(APIResponse(STATUS.ERROR, error.message));
   }
 
   if (!user) {
-    return res.status(NOTFOUND_STATUS_CODE).json(APIResponse(STATUS.ERROR, "User not found"));
+    return res
+      .status(NOTFOUND_STATUS_CODE)
+      .json(APIResponse(STATUS.ERROR, "User not found"));
   }
 
   if (activeCode !== user.activeCode) {
-    return res.status(BAD_REQUEST_STATUS_CODE).json(APIResponse(STATUS.ERROR, "Active code is not correct, please try again"));
+    return res
+      .status(BAD_REQUEST_STATUS_CODE)
+      .json(
+        APIResponse(
+          STATUS.ERROR,
+          "Active code is not correct, please try again"
+        )
+      );
   }
 
   try {
     user.isActive = true;
     await user.save();
   } catch (error) {
-    return res.status(INTERNAL_SERVER_STATUS_CODE).json(APIResponse(STATUS.ERROR, error.message));
+    return res
+      .status(INTERNAL_SERVER_STATUS_CODE)
+      .json(APIResponse(STATUS.ERROR, error.message));
   }
 
-  return res.status(SUCCESS_STATUS_CODE).json(APIResponse(STATUS.OK, "Account has been activated!", [user]));
+  return res
+    .status(SUCCESS_STATUS_CODE)
+    .json(APIResponse(STATUS.OK, "Account has been activated!", [user]));
 };
 
 export const resetAccount = async (req, res) => {
@@ -189,14 +233,18 @@ export const resetAccount = async (req, res) => {
   try {
     user = await User.findOne({ email });
   } catch (error) {
-    return res.status(INTERNAL_SERVER_STATUS_CODE).json(APIResponse(STATUS.ERROR, error.message));
+    return res
+      .status(INTERNAL_SERVER_STATUS_CODE)
+      .json(APIResponse(STATUS.ERROR, error.message));
   }
 
   if (!user) {
-    return res.status(NOTFOUND_STATUS_CODE).json(APIResponse(STATUS.ERROR, "User not found"));
+    return res
+      .status(NOTFOUND_STATUS_CODE)
+      .json(APIResponse(STATUS.ERROR, "User not found"));
   }
 
-  const newPassword = uuidv4()
+  const newPassword = uuidv4();
   const newHashPassword = await bcrypt.hash(newPassword, 10);
   user.password = newHashPassword;
 
@@ -209,9 +257,12 @@ export const resetAccount = async (req, res) => {
       `<p> This is your new password: <h3> ${newPassword} </h3>`
     );
   } catch (error) {
-    return res.status(INTERNAL_SERVER_STATUS_CODE).json(APIResponse(STATUS.ERROR, error.message));
+    return res
+      .status(INTERNAL_SERVER_STATUS_CODE)
+      .json(APIResponse(STATUS.ERROR, error.message));
   }
 
-  return res.status(SUCCESS_STATUS_CODE).json(APIResponse(STATUS.OK, "New password has been sent to your email"));
+  return res
+    .status(SUCCESS_STATUS_CODE)
+    .json(APIResponse(STATUS.OK, "New password has been sent to your email"));
 };
-

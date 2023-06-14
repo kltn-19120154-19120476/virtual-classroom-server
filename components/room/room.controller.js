@@ -11,7 +11,7 @@ import {
 
 import dotenv from "dotenv";
 import { APIResponse } from "../../models/APIResponse.js";
-import groupModel from "../../models/group.model.js";
+import roomModel from "../../models/room.model.js";
 import userModel from "../../models/user.model.js";
 dotenv.config();
 // Interact Data
@@ -31,18 +31,18 @@ export const createRoom = async (req, res) => {
       .json(APIResponse(STATUS.ERROR, error.message));
   }
 
-  const newGroup = new groupModel({
+  const newRoom = new roomModel({
     name,
     ownerId: ownerUser._id,
     memberIds: [],
     coOwnerIds: [],
   });
 
-  //Add group to user
-  ownerUser.myGroupIds.push(newGroup);
+  //Add room to user
+  ownerUser.myRoomIds.push(newRoom);
   try {
     await ownerUser.save();
-    await newGroup.save();
+    await newRoom.save();
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
@@ -52,7 +52,7 @@ export const createRoom = async (req, res) => {
   //ALl SUCCESS
   return res
     .status(SUCCESS_STATUS_CODE)
-    .json(APIResponse(STATUS.OK, "Create room successfully", newGroup));
+    .json(APIResponse(STATUS.OK, "Create room successfully", newRoom));
 };
 
 export const updateRoom = async (req, res) => {
@@ -70,11 +70,11 @@ export const updateRoom = async (req, res) => {
       .json(APIResponse(STATUS.ERROR, error.message));
   }
 
-  let updatedGroup;
+  let updatedRoom;
 
   try {
-    await groupModel.updateOne({ _id: id }, req.body);
-    updatedGroup = await groupModel.findOne({ _id: id });
+    await roomModel.updateOne({ _id: id }, req.body);
+    updatedRoom = await roomModel.findOne({ _id: id });
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
@@ -84,7 +84,7 @@ export const updateRoom = async (req, res) => {
   //ALL SUCCESS
   return res
     .status(SUCCESS_STATUS_CODE)
-    .json(APIResponse(STATUS.OK, "Update group successfully", updatedGroup));
+    .json(APIResponse(STATUS.OK, "Update room successfully", updatedRoom));
 };
 
 export const addUser = async (req, res) => {
@@ -109,33 +109,33 @@ export const addUser = async (req, res) => {
 
   const userId = memberUser._id;
 
-  //Get GroupInstance
-  let groupInstance;
+  //Get RoomInstance
+  let roomInstance;
 
   try {
-    groupInstance = await groupModel.findById(roomId);
+    roomInstance = await roomModel.findById(roomId);
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
       .json(APIResponse(STATUS.ERROR, error.message));
   }
 
-  //Check user already in group
+  //Check user already in room
   if (
-    groupInstance.ownerId.equals(userId) ||
-    groupInstance.coOwnerIds.includes(userId) ||
-    groupInstance.memberIds.includes(userId)
+    roomInstance.ownerId.equals(userId) ||
+    roomInstance.coOwnerIds.includes(userId) ||
+    roomInstance.memberIds.includes(userId)
   ) {
     return res
       .status(BAD_REQUEST_STATUS_CODE)
-      .json(APIResponse(STATUS.ERROR, "User is already in this group!"));
+      .json(APIResponse(STATUS.ERROR, "User is already in this room!"));
   }
 
-  groupInstance.memberIds.push(memberUser);
-  memberUser.joinedGroupIds.push(groupInstance);
+  roomInstance.memberIds.push(memberUser);
+  memberUser.joinedRoomIds.push(roomInstance);
 
   try {
-    await groupInstance.save();
+    await roomInstance.save();
     await memberUser.save();
   } catch (error) {
     return res
@@ -174,19 +174,19 @@ export const upgradeRole = async (req, res) => {
       .json(APIResponse(STATUS.ERROR, error.message));
   }
 
-  //Get GroupInstance
-  let groupInstance;
+  //Get RoomInstance
+  let roomInstance;
 
   try {
-    groupInstance = await groupModel.findById(roomId);
+    roomInstance = await roomModel.findById(roomId);
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
       .json(APIResponse(STATUS.ERROR, error.message));
   }
 
-  //Check if requester is group's owner
-  if (!groupInstance.ownerId.equals(ownerUser._id)) {
+  //Check if requester is room's owner
+  if (!roomInstance.ownerId.equals(ownerUser._id)) {
     return res
       .status(FORBIDDEN_STATUS_CODE)
       .json(APIResponse(STATUS.ERROR, "You are not allowed to do this"));
@@ -194,15 +194,15 @@ export const upgradeRole = async (req, res) => {
 
   if (isUpgrade) {
     //Move from member to co-owner
-    var index = groupInstance.memberIds.indexOf(memberUser._id);
+    var index = roomInstance.memberIds.indexOf(memberUser._id);
     if (index > -1) {
-      groupInstance.memberIds.splice(index, 1);
+      roomInstance.memberIds.splice(index, 1);
     }
 
-    groupInstance.coOwnerIds.push(memberUser);
+    roomInstance.coOwnerIds.push(memberUser);
 
     try {
-      await groupInstance.save();
+      await roomInstance.save();
     } catch (error) {
       return res
         .status(INTERNAL_SERVER_STATUS_CODE)
@@ -214,15 +214,15 @@ export const upgradeRole = async (req, res) => {
       .json(APIResponse(STATUS.OK, "Upgrade role successfully"));
   } else {
     //Move from co-owner to member
-    var index = groupInstance.coOwnerIds.indexOf(memberUser._id);
+    var index = roomInstance.coOwnerIds.indexOf(memberUser._id);
     if (index > -1) {
-      groupInstance.coOwnerIds.splice(index, 1);
+      roomInstance.coOwnerIds.splice(index, 1);
     }
 
-    groupInstance.memberIds.push(memberUser);
+    roomInstance.memberIds.push(memberUser);
 
     try {
-      await groupInstance.save();
+      await roomInstance.save();
     } catch (error) {
       return res
         .status(INTERNAL_SERVER_STATUS_CODE)
@@ -257,11 +257,11 @@ export const removeUser = async (req, res) => {
 
   const userId = memberUser._id;
 
-  //Get GroupInstance
-  let groupInstance;
+  //Get RoomInstance
+  let roomInstance;
 
   try {
-    groupInstance = await groupModel.findById(roomId);
+    roomInstance = await roomModel.findById(roomId);
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
@@ -280,33 +280,33 @@ export const removeUser = async (req, res) => {
       .json(APIResponse(STATUS.ERROR, error.message));
   }
 
-  // Check if requester is group's owner
-  if (!groupInstance.ownerId.equals(ownerUser._id)) {
+  // Check if requester is room's owner
+  if (!roomInstance.ownerId.equals(ownerUser._id)) {
     return res
       .status(FORBIDDEN_STATUS_CODE)
       .json(APIResponse(STATUS.ERROR, "You are not allowed to do this"));
   }
 
   try {
-    if (groupInstance.coOwnerIds.includes(userId)) {
-      let index = groupInstance.coOwnerIds.indexOf(userId);
+    if (roomInstance.coOwnerIds.includes(userId)) {
+      let index = roomInstance.coOwnerIds.indexOf(userId);
       if (index > -1) {
-        groupInstance.coOwnerIds.splice(index, 1);
+        roomInstance.coOwnerIds.splice(index, 1);
       }
     } else {
-      let index = groupInstance.memberIds.indexOf(userId);
+      let index = roomInstance.memberIds.indexOf(userId);
       if (index > -1) {
-        groupInstance.memberIds.splice(index, 1);
+        roomInstance.memberIds.splice(index, 1);
       }
     }
 
-    let index = memberUser.joinedGroupIds.indexOf(roomId);
+    let index = memberUser.joinedRoomIds.indexOf(roomId);
     if (index > -1) {
-      memberUser.joinedGroupIds.splice(index, 1);
+      memberUser.joinedRoomIds.splice(index, 1);
     }
 
     await memberUser.save();
-    await groupInstance.save();
+    await roomInstance.save();
   } catch (error) {
     return res
       .status(INTERNAL_SERVER_STATUS_CODE)
@@ -323,20 +323,20 @@ export const removeUser = async (req, res) => {
 export const getRoomDetail = async (req, res) => {
   try {
     const roomId = req.param("roomId");
-    //Get GroupInstance
-    let groupInstance = await groupModel.findById(roomId);
+    //Get RoomInstance
+    let roomInstance = await roomModel.findById(roomId);
 
     //Get member
     let memberUser = req.user;
 
     if (
-      groupInstance.ownerId.equals(memberUser._id) ||
-      groupInstance.memberIds.includes(memberUser._id) ||
-      groupInstance.coOwnerIds.includes(memberUser._id)
+      roomInstance.ownerId.equals(memberUser._id) ||
+      roomInstance.memberIds.includes(memberUser._id) ||
+      roomInstance.coOwnerIds.includes(memberUser._id)
     ) {
       const result = {
-        ...groupInstance._doc,
-        isOwner: groupInstance.ownerId.equals(memberUser._id),
+        ...roomInstance._doc,
+        isOwner: roomInstance.ownerId.equals(memberUser._id),
       };
 
       return res
@@ -361,24 +361,24 @@ export const getRoomByIds = async (req, res) => {
     if (req.user) {
       const { ids = [] } = req.body;
 
-      const groupList =
+      const roomList =
         ids?.length > 0
-          ? await groupModel.find({
+          ? await roomModel.find({
               _id: {
                 $in: ids,
               },
             })
-          : await groupModel.find();
+          : await roomModel.find();
 
       return res.status(SUCCESS_STATUS_CODE).json({
         status: STATUS.OK,
-        data: groupList.map((group) => {
+        data: roomList.map((room) => {
           return {
-            ...group._doc,
-            isOwner: group.ownerId.equals(req.user._id),
+            ...room._doc,
+            isOwner: room.ownerId.equals(req.user._id),
           };
         }),
-        message: "Get group list successfully",
+        message: "Get room list successfully",
       });
     } else {
       return res.status(NOTFOUND_STATUS_CODE).json({
@@ -411,14 +411,14 @@ export const delRoomByIds = async (req, res) => {
       .json(APIResponse(STATUS.ERROR, error.message));
   }
 
-  let existGroup;
+  let existRoom;
   //Check name exists
   try {
-    existGroup = await groupModel.findById(id);
-    if (!existGroup) {
+    existRoom = await roomModel.findById(id);
+    if (!existRoom) {
       return res
         .status(NOTFOUND_STATUS_CODE)
-        .json(APIResponse(STATUS.ERROR, "Group not found"));
+        .json(APIResponse(STATUS.ERROR, "Room not found"));
     }
   } catch (error) {
     return res
@@ -426,26 +426,26 @@ export const delRoomByIds = async (req, res) => {
       .json(APIResponse(STATUS.ERROR, error.message));
   }
 
-  //Check owner of group
-  if (!existGroup.ownerId.equals(req.user._id)) {
+  //Check owner of room
+  if (!existRoom.ownerId.equals(req.user._id)) {
     return res
       .status(FORBIDDEN_STATUS_CODE)
       .json(APIResponse(STATUS.ERROR, "You are not allowed"));
   }
 
   try {
-    await groupModel.deleteOne({ _id: id });
-    let index = ownerUser.myGroupIds.indexOf(id);
+    await roomModel.deleteOne({ _id: id });
+    let index = ownerUser.myRoomIds.indexOf(id);
     if (index > -1) {
-      if (ownerUser.myGroupIds.length === 1) {
-        ownerUser.myGroupIds = [];
-      } else ownerUser.myGroupIds.splice(index, 1);
+      if (ownerUser.myRoomIds.length === 1) {
+        ownerUser.myRoomIds = [];
+      } else ownerUser.myRoomIds.splice(index, 1);
     }
     await ownerUser.save();
 
     await userModel.updateMany(
-      { joinedGroupIds: id },
-      { $pull: { joinedGroupIds: id } }
+      { joinedRoomIds: id },
+      { $pull: { joinedRoomIds: id } }
     );
   } catch (error) {
     return res

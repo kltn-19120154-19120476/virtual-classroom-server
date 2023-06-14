@@ -6,8 +6,6 @@ import findConfig from "find-config";
 import http from "http";
 import route from "./components/root/root.route.js";
 import DbConnect from "./config/db/index.js";
-import presentationModel from "./models/presentation.model.js";
-import questionModel from "./models/question.model.js";
 
 dotenv.config({ path: findConfig(".env") });
 
