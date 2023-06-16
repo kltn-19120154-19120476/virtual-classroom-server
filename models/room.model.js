@@ -22,6 +22,7 @@ const Room = new mongoose.Schema({
   meetingInfo: { type: String },
   presentation: { type: String },
   meetingSettings: { type: String },
+  learningDashboards: [{ type: String }],
 });
 
 export default mongoose.model("Room", Room);
