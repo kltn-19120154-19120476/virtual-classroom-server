@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const Recording = new mongoose.Schema({
   recordId: {
@@ -16,6 +16,18 @@ const Recording = new mongoose.Schema({
   playbackUrl: {
     type: String,
   },
+  name: {
+    type: String,
+  },
+  participants: {
+    type: Number,
+  },
+  published: {
+    type: Boolean,
+  },
+  deleted: {
+    type: Boolean,
+  },
 });
 
-export default mongoose.model('Recording', Recording);
+export default mongoose.model("Recording", Recording);
