@@ -127,3 +127,34 @@ export const deletePres = async (req, res) => {
     });
   }
 };
+
+export const updatePres = async (req, res) => {
+  try {
+    if (req.user) {
+      const userId = req.user._id;
+      const id = req.param("id");
+
+      const body = req.body;
+
+      await documentModel.updateOne({ presId: id, userId }, body);
+
+      return res.status(SUCCESS_STATUS_CODE).json({
+        status: STATUS.OK,
+        data: [],
+        message: "Document updated successfully",
+      });
+    } else {
+      return res.status(NOTFOUND_STATUS_CODE).json({
+        status: STATUS.ERROR,
+        data: [],
+        message: "Not found",
+      });
+    }
+  } catch (e) {
+    return res.status(NOTFOUND_STATUS_CODE).json({
+      status: STATUS.ERROR,
+      data: [],
+      message: e.message,
+    });
+  }
+};
