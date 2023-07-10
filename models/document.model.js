@@ -17,6 +17,9 @@ const Document = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
+  isPublic: {
+    type: Boolean,
+  },
   //   current: {
   //     type: mongoose.Schema.Types.ObjectId,
   //   },

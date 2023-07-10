@@ -46,6 +46,7 @@ export const createDocument = async (req, res) => {
     // authzToken,
     // uploadFailed,
     // uploadFailReasons,
+    isPublic: req.user?.type === "ADMIN",
   });
 
   try {
@@ -76,7 +77,7 @@ export const getDocumentByPresIds = async (req, res) => {
               },
               userId,
             })
-          : await documentModel.find({ userId });
+          : await documentModel.find({ $or: [{ userId }, { isPublic: true }] });
 
       return res.status(SUCCESS_STATUS_CODE).json({
         status: STATUS.OK,
