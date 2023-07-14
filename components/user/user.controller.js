@@ -1,7 +1,12 @@
 import bcrypt from "bcryptjs";
+import { v4 as uuidv4 } from "uuid";
 import { sendEmail } from "../../config/email/emailService.js";
 import { STATUS } from "../../constants/common.js";
-import { BAD_REQUEST_STATUS_CODE, NOTFOUND_STATUS_CODE, SUCCESS_STATUS_CODE } from "../../constants/http-response.js";
+import {
+  BAD_REQUEST_STATUS_CODE,
+  NOTFOUND_STATUS_CODE,
+  SUCCESS_STATUS_CODE,
+} from "../../constants/http-response.js";
 import userModel from "../../models/user.model.js";
 
 export const sendVerificationEmail = async (req, res) => {
@@ -70,7 +75,10 @@ export const updateUser = async (req, res) => {
 
       if (isPasswordValid) {
         const newPasswordHashed = await bcrypt.hash(newPassword, 10);
-        await userModel.findOneAndUpdate({ email: req.user.email }, { ...req.user, name, password: newPasswordHashed });
+        await userModel.findOneAndUpdate(
+          { email: req.user.email },
+          { ...req.user, name, password: newPasswordHashed }
+        );
         const updatedUser = await userModel.findOne({ email: req.user.email });
 
         return res.status(SUCCESS_STATUS_CODE).json({
@@ -124,6 +132,120 @@ export const getUserByIds = async (req, res) => {
         message: "User not found",
       });
     }
+  } catch (e) {
+    return res.status(NOTFOUND_STATUS_CODE).json({
+      status: STATUS.ERROR,
+      data: [],
+      message: e.message,
+    });
+  }
+};
+
+export const adminGetUserList = async (req, res) => {
+  if (req.user?.type !== "ADMIN") {
+    return res.status(BAD_REQUEST_STATUS_CODE).json({
+      status: STATUS.ERROR,
+      data: [],
+      message: "You must be an administrator to do this action",
+    });
+  }
+
+  try {
+    const userList = await userModel.find({ type: { $ne: "ADMIN" } });
+
+    return res.status(SUCCESS_STATUS_CODE).json({
+      status: STATUS.OK,
+      data: userList,
+      message: "Get user list successfully",
+    });
+  } catch (e) {
+    return res.status(NOTFOUND_STATUS_CODE).json({
+      status: STATUS.ERROR,
+      data: [],
+      message: e.message,
+    });
+  }
+};
+
+export const adminUpdateUser = async (req, res) => {
+  if (req.user?.type !== "ADMIN") {
+    return res.status(BAD_REQUEST_STATUS_CODE).json({
+      status: STATUS.ERROR,
+      data: [],
+      message: "You must be an administrator to do this action",
+    });
+  }
+
+  try {
+    const userId = req.param("userId");
+
+    const updateInfo = req.body;
+
+    await userModel.updateOne({ _id: userId }, updateInfo);
+
+    return res.status(SUCCESS_STATUS_CODE).json({
+      status: STATUS.OK,
+      message: "User updated successfully",
+    });
+  } catch (e) {
+    return res.status(NOTFOUND_STATUS_CODE).json({
+      status: STATUS.ERROR,
+      data: [],
+      message: e.message,
+    });
+  }
+};
+
+export const adminDeleteUser = async (req, res) => {
+  if (req.user?.type !== "ADMIN") {
+    return res.status(BAD_REQUEST_STATUS_CODE).json({
+      status: STATUS.ERROR,
+      data: [],
+      message: "You must be an administrator to do this action",
+    });
+  }
+
+  try {
+    const userId = req.param("userId");
+
+    await userModel.deleteOne({ _id: userId });
+
+    return res.status(SUCCESS_STATUS_CODE).json({
+      status: STATUS.OK,
+      message: "User deleted successfully",
+    });
+  } catch (e) {
+    return res.status(NOTFOUND_STATUS_CODE).json({
+      status: STATUS.ERROR,
+      data: [],
+      message: e.message,
+    });
+  }
+};
+
+export const adminResetUserPassword = async (req, res) => {
+  if (req.user?.type !== "ADMIN") {
+    return res.status(BAD_REQUEST_STATUS_CODE).json({
+      status: STATUS.ERROR,
+      data: [],
+      message: "You must be an administrator to do this action",
+    });
+  }
+
+  try {
+    const userId = req.param("userId");
+
+    const newPassword = uuidv4().substr(0, 8);
+
+    const newPasswordHashed = await bcrypt.hash(newPassword, 10);
+
+    await userModel.updateOne({ _id: userId }, { password: newPasswordHashed });
+
+    return res.status(SUCCESS_STATUS_CODE).json({
+      status: STATUS.OK,
+      data: [{ newPassword }],
+      message: "User reset password successfully",
+    });
   } catch (e) {
     return res.status(NOTFOUND_STATUS_CODE).json({
       status: STATUS.ERROR,
