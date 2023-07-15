@@ -151,7 +151,23 @@ export const adminGetUserList = async (req, res) => {
   }
 
   try {
-    const userList = await userModel.find({ type: { $ne: "ADMIN" } });
+    let userList = [];
+
+    const search = req.param("search") || "";
+
+    if (search) {
+      userList = await userModel.find({
+        $or: [
+          { name: new RegExp(search, "iu") },
+          { email: new RegExp(search, "iu") },
+        ],
+        type: {
+          $ne: "ADMIN",
+        },
+      });
+    } else {
+      userList = await userModel.find({ type: { $ne: "ADMIN" } });
+    }
 
     return res.status(SUCCESS_STATUS_CODE).json({
       status: STATUS.OK,
