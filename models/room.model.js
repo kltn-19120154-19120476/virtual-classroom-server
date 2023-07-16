@@ -23,6 +23,10 @@ const Room = new mongoose.Schema({
   presentation: { type: String },
   meetingSettings: { type: String },
   learningDashboards: [{ type: String }],
+  db_createdTime: {
+    type: Date,
+    default: new Date().getTime(),
+  },
 });
 
 export default mongoose.model("Room", Room);

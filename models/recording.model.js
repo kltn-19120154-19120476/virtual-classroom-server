@@ -19,6 +19,9 @@ const Recording = new mongoose.Schema({
   name: {
     type: String,
   },
+  recordName: {
+    type: String,
+  },
   participants: {
     type: Number,
   },
@@ -27,6 +30,10 @@ const Recording = new mongoose.Schema({
   },
   deleted: {
     type: Boolean,
+  },
+  db_createdTime: {
+    type: Date,
+    default: new Date().getTime(),
   },
 });
 

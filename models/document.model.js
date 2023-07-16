@@ -32,6 +32,10 @@ const Document = new mongoose.Schema({
   //   uploadFailReasons: {
   //     type: mongoose.Schema.Types.ObjectId,
   //   },
+  db_createdTime: {
+    type: Date,
+    default: new Date().getTime(),
+  },
 });
 
 export default mongoose.model("Document", Document);

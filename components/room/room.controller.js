@@ -363,12 +363,18 @@ export const getRoomByIds = async (req, res) => {
 
       const roomList =
         ids?.length > 0
-          ? await roomModel.find({
-              _id: {
-                $in: ids,
-              },
-            })
-          : await roomModel.find();
+          ? await roomModel
+              .find({
+                _id: {
+                  $in: ids,
+                },
+              })
+              .sort({
+                db_createdTime: -1,
+              })
+          : await roomModel.find().sort({
+              db_createdTime: -1,
+            });
 
       return res.status(SUCCESS_STATUS_CODE).json({
         status: STATUS.OK,

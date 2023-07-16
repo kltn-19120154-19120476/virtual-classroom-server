@@ -71,13 +71,21 @@ export const getDocumentByPresIds = async (req, res) => {
 
       const docList =
         ids?.length > 0
-          ? await documentModel.find({
-              presId: {
-                $in: ids,
-              },
-              userId,
-            })
-          : await documentModel.find({ $or: [{ userId }, { isPublic: true }] });
+          ? await documentModel
+              .find({
+                presId: {
+                  $in: ids,
+                },
+                userId,
+              })
+              .sort({
+                db_createdTime: -1,
+              })
+          : await documentModel
+              .find({ $or: [{ userId }, { isPublic: true }] })
+              .sort({
+                db_createdTime: -1,
+              });
 
       return res.status(SUCCESS_STATUS_CODE).json({
         status: STATUS.OK,

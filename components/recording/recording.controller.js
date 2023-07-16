@@ -28,6 +28,7 @@ export const createRecording = async (req, res) => {
     name,
     participants,
     published,
+    recordName,
   } = req.body;
 
   //Check presId exists
@@ -66,6 +67,7 @@ export const createRecording = async (req, res) => {
     participants,
     published,
     deleted: false,
+    recordName,
   });
 
   try {
@@ -115,7 +117,9 @@ export const getRecordingByMeetingId = async (req, res) => {
         recordingFilter.published = true;
       }
 
-      const recordingList = await recordingModel.find(recordingFilter);
+      const recordingList = await recordingModel.find(recordingFilter).sort({
+        db_createdTime: -1,
+      });
 
       return res.status(SUCCESS_STATUS_CODE).json({
         status: STATUS.OK,
