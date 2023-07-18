@@ -370,10 +370,10 @@ export const getRoomByIds = async (req, res) => {
                 },
               })
               .sort({
-                db_createdTime: -1,
+                createdAt: -1,
               })
           : await roomModel.find().sort({
-              db_createdTime: -1,
+              createdAt: -1,
             });
 
       return res.status(SUCCESS_STATUS_CODE).json({

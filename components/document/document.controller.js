@@ -79,12 +79,12 @@ export const getDocumentByPresIds = async (req, res) => {
                 userId,
               })
               .sort({
-                db_createdTime: -1,
+                createdAt: -1,
               })
           : await documentModel
               .find({ $or: [{ userId }, { isPublic: true }] })
               .sort({
-                db_createdTime: -1,
+                createdAt: -1,
               });
 
       return res.status(SUCCESS_STATUS_CODE).json({

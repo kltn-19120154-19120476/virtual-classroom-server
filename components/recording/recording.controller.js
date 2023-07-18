@@ -118,7 +118,7 @@ export const getRecordingByMeetingId = async (req, res) => {
       }
 
       const recordingList = await recordingModel.find(recordingFilter).sort({
-        db_createdTime: -1,
+        endTime: -1,
       });
 
       return res.status(SUCCESS_STATUS_CODE).json({

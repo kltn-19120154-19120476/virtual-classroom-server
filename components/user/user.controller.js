@@ -114,11 +114,13 @@ export const getUserByIds = async (req, res) => {
     if (req.user) {
       const { ids = [] } = req.body;
 
-      const userList = await userModel.find({
-        _id: {
-          $in: ids,
-        },
-      });
+      const userList = await userModel
+        .find({
+          _id: {
+            $in: ids,
+          },
+        })
+        .sort({ createdAt: -1 });
 
       return res.status(SUCCESS_STATUS_CODE).json({
         status: STATUS.OK,
@@ -167,10 +169,12 @@ export const adminGetUserList = async (req, res) => {
           },
         })
         .sort({
-          db_createdTime: -1,
+          createdAt: -1,
         });
     } else {
-      userList = await userModel.find({ type: { $ne: "ADMIN" } });
+      userList = await userModel
+        .find({ type: { $ne: "ADMIN" } })
+        .sort({ createdAt: -1 });
     }
 
     return res.status(SUCCESS_STATUS_CODE).json({

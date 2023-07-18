@@ -1,32 +1,33 @@
 import mongoose from "mongoose";
 
-const Room = new mongoose.Schema({
-  name: { type: String, required: true },
-  ownerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    require: true,
-  },
-  memberIds: [
-    {
+const Room = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    ownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      require: true,
     },
-  ],
-  coOwnerIds: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-  ],
-  meetingInfo: { type: String },
-  presentation: { type: String },
-  meetingSettings: { type: String },
-  learningDashboards: [{ type: String }],
-  db_createdTime: {
-    type: Date,
-    default: new Date().getTime(),
+    memberIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    coOwnerIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    meetingInfo: { type: String },
+    presentation: { type: String },
+    meetingSettings: { type: String },
+    learningDashboards: [{ type: String }],
   },
-});
+  {
+    timestamps: true,
+  }
+);
 
 export default mongoose.model("Room", Room);
