@@ -74,10 +74,17 @@ export const updateUser = async (req, res) => {
       const isPasswordValid = await bcrypt.compare(password, req.user.password);
 
       if (isPasswordValid) {
-        const newPasswordHashed = await bcrypt.hash(newPassword, 10);
+        let newPasswordHashed = "";
+        if (newPassword) {
+          newPasswordHashed = await bcrypt.hash(newPassword, 10);
+        }
         await userModel.findOneAndUpdate(
           { email: req.user.email },
-          { ...req.user, name, password: newPasswordHashed }
+          {
+            ...req.user,
+            name,
+            password: newPassword ? newPasswordHashed : password,
+          }
         );
         const updatedUser = await userModel.findOne({ email: req.user.email });
 
